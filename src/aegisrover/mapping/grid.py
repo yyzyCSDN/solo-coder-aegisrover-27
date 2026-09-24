@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from aegisrover.core.types import GridShape, Vec2
 
@@ -23,8 +24,10 @@ class OccupancyGrid:
         self.cells[self.index(x, y)] = int(v)
 
     def world_to_cell(self, p: Vec2):
-        x = int((p.x - self.shape.origin.x) / self.shape.resolution)
-        y = int((p.y - self.shape.origin.y) / self.shape.resolution)
+        # floor (not truncation) so points left of/below the origin land in the
+        # same cell they geometrically occupy, matching LogOddsGrid.world_to_cell.
+        x = math.floor((p.x - self.shape.origin.x) / self.shape.resolution)
+        y = math.floor((p.y - self.shape.origin.y) / self.shape.resolution)
         return (x, y)
 
     def cell_center(self, x, y):
