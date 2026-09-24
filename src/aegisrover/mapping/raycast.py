@@ -2,10 +2,10 @@ import math
 
 
 def bresenham(x0, y0, x1, y1):
-    x0 = int(x0)
-    y0 = int(y0)
-    x1 = int(x1)
-    y1 = int(y1)
+    x0 = math.floor(x0)
+    y0 = math.floor(y0)
+    x1 = math.floor(x1)
+    y1 = math.floor(y1)
     dx = abs(x1 - x0)
     sx = 1 if x0 < x1 else -1
     dy = -abs(y1 - y0)

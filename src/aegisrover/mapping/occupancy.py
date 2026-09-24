@@ -66,10 +66,8 @@ class LogOddsGrid:
         return y * self.shape.width + x
 
     def world_to_cell(self, point: Vec2) -> tuple[int, int]:
-        """World point to cell index; uses floor so negative coordinates stay ordered."""
-        x = math.floor((point.x - self.shape.origin.x) / self.shape.resolution)
-        y = math.floor((point.y - self.shape.origin.y) / self.shape.resolution)
-        return (int(x), int(y))
+        """World point to the grid cell containing it in every quadrant."""
+        return self.shape.world_to_cell(point)
 
     def probability(self, x: int, y: int) -> float:
         return self._logistic(self._values[self.index(x, y)])

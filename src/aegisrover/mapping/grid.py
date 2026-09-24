@@ -23,9 +23,7 @@ class OccupancyGrid:
         self.cells[self.index(x, y)] = int(v)
 
     def world_to_cell(self, p: Vec2):
-        x = int((p.x - self.shape.origin.x) / self.shape.resolution)
-        y = int((p.y - self.shape.origin.y) / self.shape.resolution)
-        return (x, y)
+        return self.shape.world_to_cell(p)
 
     def cell_center(self, x, y):
         return Vec2(self.shape.origin.x + (x + 0.5) * self.shape.resolution, self.shape.origin.y + (y + 0.5) * self.shape.resolution)

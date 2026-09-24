@@ -1,10 +1,13 @@
 """Acceptance tests for the simulation and mapping domains."""
 import json
+import math
 
 import pytest
 
 from aegisrover.core.types import GridShape, Pose2, Twist2, Vec2
+from aegisrover.mapping.grid import OccupancyGrid
 from aegisrover.mapping.occupancy import LogOddsGrid
+from aegisrover.mapping.raycast import bresenham
 from aegisrover.mapping.revisions import MapFormatError, MapRepository
 from aegisrover.sim.engine import SimulationEngine, SimulationError
 from aegisrover.sim.scenarios import ScenarioError, ScenarioSpec, ScenarioStore
@@ -140,6 +143,33 @@ def grid(width=5, height=5, resolution=1.0):
     return LogOddsGrid(GridShape(width, height, resolution, Vec2(0.0, 0.0)))
 
 
+def test_world_to_cell_floors_toward_negative_infinity():
+    shape = GridShape(8, 8, 0.5, Vec2(-2.0, -2.0))
+    occupancy = OccupancyGrid.empty(shape, fill=0)
+
+    for point, expected in (
+        (Vec2(-0.1, -0.1), (3, 3)),
+        (Vec2(0.0, 0.0), (4, 4)),
+        (Vec2(-0.51, -0.51), (2, 2)),
+    ):
+        cell = occupancy.world_to_cell(point)
+        assert cell == expected
+        assert occupancy.index(*cell) == expected[1] * shape.width + expected[0]
+
+    assert occupancy.world_to_cell(Vec2(-1.75, 1.75)) == (0, 7)
+
+
+def test_bresenham_uses_containing_cell_for_negative_endpoints():
+    ray = bresenham(-0.1, -0.1, 1.1, 1.1)
+    assert ray[0] == (-1, -1)
+    assert ray[-1] == (1, 1)
+
+    reverse = bresenham(1.1, 1.1, -0.1, -0.1)
+    assert reverse[0] == (1, 1)
+    assert reverse[-1] == (-1, -1)
+    assert set(ray) == set(reverse)
+
+
 def test_occupancy_updates_clamp_and_track_revision():
     g = grid()
     start = g.probability(1, 1)
@@ -162,6 +192,19 @@ def test_scan_marks_free_cells_and_occupied_endpoint():
     assert report.free_marked >= 2
     assert g.is_occupied(3, 1) or g.probability(3, 1) > 0.5
     assert g.is_free(1, 1)
+
+
+def test_scan_covers_beams_consistently_in_all_quadrants():
+    g = LogOddsGrid(GridShape(8, 8, 0.5, Vec2(-2.0, -2.0)))
+    report = g.integrate_scan(Pose2(-0.1, -0.1, 0.0), [0.6, 0.6],
+                              angle_min=0.0, angle_increment=math.pi,
+                              max_range=10.0)
+
+    assert report.occupied_marked == 2
+    assert g.is_occupied(5, 3)
+    assert g.is_occupied(2, 3)
+    assert g.is_free(3, 3)
+    assert g.is_free(4, 3)
 
 
 def test_scan_at_max_range_is_not_an_obstacle():

@@ -64,6 +64,12 @@ class GridShape:
         if self.width <= 0 or self.height <= 0 or self.resolution <= 0:
             raise ValueError('invalid grid')
 
+    def world_to_cell(self, point: 'Vec2') -> tuple[int, int]:
+        x = math.floor((point.x - self.origin.x) / self.resolution)
+        y = math.floor((point.y - self.origin.y) / self.resolution)
+        return (x, y)
+
+
 @dataclass(frozen=True)
 class Interval:
     start: float
